@@ -1,0 +1,29 @@
+Table TuberOrder {
+  Id int [pk]
+  OrderPlacedOnDate datetime
+  CustomerId int [ref: > Customer.Id]
+  TuberDriverId int [null, ref: > TuberDriver.Id]
+  DeliveredOnDate datetime [null]
+}
+
+Table Customer {
+  Id int [pk]
+  Name string
+  Address string
+}
+
+Table TuberDriver {
+  Id int [pk]
+  Name string
+}
+
+Table Topping {
+  Id int [pk]
+  Name string
+}
+
+Table TuberTopping {
+  Id int [pk]
+  TuberOrderId int [ref: > TuberOrder.Id]
+  ToppingId int [ref: > Topping.Id]
+}

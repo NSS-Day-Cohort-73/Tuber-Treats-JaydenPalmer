@@ -1,13 +1,10 @@
-namespace TuberTreats.Models;
+namespace TuberTreats.Models.DTOs;
 
-public class TuberOrder
+public class TuberOrderDTO
 {
     public int Id { get; set; }
     public DateTime OrderPlacedOnDate { get; set; }
     public int CustomerId { get; set; }
     public int? TuberDriverId { get; set; }
     public DateTime? DeliveredOnDate { get; set; }
-    public Customer Customer { get; set; }
-    public TuberDriver TuberDriver { get; set; }
-    public List<TuberTopping> Toppings { get; set; }
 }
