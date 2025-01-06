@@ -64,7 +64,7 @@ List<TuberOrder> orders = new List<TuberOrder>
     new TuberOrder
     {
         Id = 2,
-        CustomerId = 2,
+        CustomerId = 5,
         TuberDriverId = 2,
         OrderPlacedOnDate = new DateTime(2024, 1, 2),
         DeliveredOnDate = new DateTime(2024, 1, 2),
@@ -85,7 +85,7 @@ List<TuberTopping> tuberToppings = new List<TuberTopping>
     {
         Id = 1,
         TuberOrderId = 1,
-        ToppingId = 1,
+        ToppingId = 5,
     },
     new TuberTopping
     {
@@ -219,6 +219,43 @@ app.MapGet(
     }
 );
 
+//creating a new order :D
+app.MapPost(
+    "/tuberorders",
+    (TuberOrder newOrder) =>
+    {
+        TuberOrder orderToAdd = new TuberOrder
+        {
+            Id = orders.Max(o => o.Id) + 1,
+            CustomerId = newOrder.CustomerId,
+            OrderPlacedOnDate = DateTime.Now,
+            TuberDriverId = newOrder.TuberDriverId != null ? newOrder.TuberDriverId : null,
+            DeliveredOnDate = null,
+        };
+
+        orders.Add(orderToAdd);
+        return Results.Created($"/orders/{orderToAdd.Id}", orderToAdd);
+    }
+);
+
+//complete an order !
+app.MapPost(
+    "/tuberorders/{id}/complete",
+    (int id) =>
+    {
+        TuberOrder orderToBeCompleted = orders.FirstOrDefault(o => o.Id == id);
+
+        if (orderToBeCompleted == null || orderToBeCompleted.DeliveredOnDate != null)
+        {
+            Results.BadRequest("that order either does not exist or has already been delivered");
+        }
+
+        orderToBeCompleted.DeliveredOnDate = DateTime.Now;
+
+        return Results.NoContent();
+    }
+);
+
 //get all the toppings
 app.MapGet(
     "/toppings",
@@ -260,9 +297,10 @@ app.MapGet(
     }
 );
 
+//create a new tuber topping/add a topping to an order
 app.MapPost(
     "/tubertoppings",
-    (CreateTuberToppingDTO newTuberTopping) =>
+    (TuberToppingDTO newTuberTopping) =>
     {
         TuberOrder order = orders.FirstOrDefault(o => o.Id == newTuberTopping.TuberOrderId);
         Topping topping = toppings.FirstOrDefault(t => t.Id == newTuberTopping.ToppingId);
@@ -292,6 +330,116 @@ app.MapPost(
         tuberToppings.Add(tuberToppingToAdd);
 
         return Results.Created($"/tubertoppings/{tuberToppingToAdd.Id}", tuberToppingToAdd);
+    }
+);
+
+//delete a tubertopping
+app.MapDelete(
+    "/tubertoppings/{id}",
+    (int id) =>
+    {
+        TuberTopping tuberToppingForDelete = tuberToppings.FirstOrDefault(tt => tt.Id == id);
+
+        if (tuberToppingForDelete == null)
+        {
+            Results.NotFound();
+        }
+
+        tuberToppings.Remove(tuberToppingForDelete);
+        return Results.NoContent();
+    }
+);
+
+//get all the drivers/employees
+app.MapGet(
+    "/tuberdrivers",
+    () =>
+    {
+        return drivers.Select(d => new TuberDriverDTO { Id = d.Id, Name = d.Name }).ToList();
+    }
+);
+
+app.MapGet(
+    "/tuberdrivers/{id}",
+    (int id) =>
+    {
+        TuberDriver tuberdriverForDetails = drivers.FirstOrDefault(d => d.Id == id);
+
+        if (tuberdriverForDetails == null)
+        {
+            Results.NotFound();
+        }
+
+        tuberdriverForDetails.TuberDeliveries = orders.Where(o => o.TuberDriverId == id).ToList();
+
+        return Results.Ok(tuberdriverForDetails);
+    }
+);
+
+//get all the customers
+app.MapGet(
+    "/customers",
+    () =>
+    {
+        return customers.Select(c => new Customer
+        {
+            Id = c.Id,
+            Name = c.Name,
+            Address = c.Address,
+        });
+    }
+);
+
+//get a singular customer
+app.MapGet(
+    "/customers/{id}",
+    (int id) =>
+    {
+        Customer customerForDetails = customers.FirstOrDefault(c => c.Id == id);
+
+        if (customerForDetails == null)
+        {
+            Results.NotFound();
+        }
+
+        customerForDetails.TuberOrders = orders.Where(o => o.CustomerId == id).ToList();
+
+        return Results.Ok(customerForDetails);
+    }
+);
+
+//add a customer
+app.MapPost(
+    "/customers",
+    (Customer newCustomer) =>
+    {
+        Customer customerToAdd = new Customer
+        {
+            Id = customers.Max(c => c.Id) + 1,
+            Name = newCustomer.Name,
+            Address = newCustomer.Address,
+        };
+
+        customers.Add(customerToAdd);
+
+        return Results.Created($"/customers/{customerToAdd.Id}", customerToAdd);
+    }
+);
+
+//delete customer
+app.MapDelete(
+    "/customers/{id}",
+    (int id) =>
+    {
+        Customer customerForDelete = customers.FirstOrDefault(c => c.Id == id);
+
+        if (customerForDelete == null)
+        {
+            Results.NotFound();
+        }
+
+        customers.Remove(customerForDelete);
+        return Results.NoContent();
     }
 );
 
