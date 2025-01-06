@@ -9,4 +9,5 @@ public class TuberOrderDetailsDTO
     public DateTime? DeliveredOnDate { get; set; }
     public CustomerDTO Customer { get; set; }
     public TuberDriverDTO TuberDriver { get; set; }
+    public List<ToppingDTO> Toppings { get; set; }
 }

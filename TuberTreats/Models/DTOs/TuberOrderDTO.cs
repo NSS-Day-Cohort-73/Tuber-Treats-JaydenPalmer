@@ -7,4 +7,7 @@ public class TuberOrderDTO
     public int CustomerId { get; set; }
     public int? TuberDriverId { get; set; }
     public DateTime? DeliveredOnDate { get; set; }
+    public CustomerDTO Customer { get; set; }
+    public TuberDriverDTO TuberDriver { get; set; }
+    public List<ToppingDTO> Toppings { get; set; }
 }

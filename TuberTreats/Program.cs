@@ -163,6 +163,14 @@ app.MapGet(
         Customer customerForDetails = customers.FirstOrDefault(customer =>
             orderForDetails.CustomerId == customer.Id
         );
+        //getting the tuberToppings to filter the toppings
+        List<TuberTopping> tuberToppingsForDetails = tuberToppings
+            .Where(tt => tt.TuberOrderId == id)
+            .ToList();
+        //using the filtered tuberToppings to grab the correct toppings
+        List<Topping> toppingsForDetails = toppings
+            .Where(t => tuberToppingsForDetails.Any(tt => tt.ToppingId == t.Id))
+            .ToList();
 
         TuberDriver driverForDetails = null;
         if (orderForDetails.TuberDriverId != null)
@@ -178,7 +186,7 @@ app.MapGet(
         }
 
         return Results.Ok(
-            new TuberOrderDetailsDTO
+            new TuberOrderDTO
             {
                 Id = orderForDetails.Id,
                 OrderPlacedOnDate = orderForDetails.OrderPlacedOnDate,
@@ -200,6 +208,12 @@ app.MapGet(
                             Name = driverForDetails.Name,
                         }
                         : null,
+                Toppings =
+                    tuberToppingsForDetails != null
+                        ? toppingsForDetails
+                            .Select(t => new ToppingDTO { Id = t.Id, Name = t.Name })
+                            .ToList()
+                        : null,
             }
         );
     }
@@ -210,7 +224,7 @@ app.MapGet(
     "/toppings",
     () =>
     {
-        return toppings.Select(t => new ToppingDTO { Id = t.Id, Name = t.Name });
+        return toppings.Select(t => new ToppingDTO { Id = t.Id, Name = t.Name }).ToList();
     }
 );
 
@@ -243,6 +257,41 @@ app.MapGet(
             TuberOrderId = tt.TuberOrderId,
             ToppingId = tt.ToppingId,
         });
+    }
+);
+
+app.MapPost(
+    "/tubertoppings",
+    (CreateTuberToppingDTO newTuberTopping) =>
+    {
+        TuberOrder order = orders.FirstOrDefault(o => o.Id == newTuberTopping.TuberOrderId);
+        Topping topping = toppings.FirstOrDefault(t => t.Id == newTuberTopping.ToppingId);
+
+        if (order == null || topping == null)
+        {
+            return Results.NotFound();
+        }
+
+        bool toppingIsAlreadyOnOrder = tuberToppings.Any(tt =>
+            tt.TuberOrderId == newTuberTopping.TuberOrderId
+            && tt.ToppingId == newTuberTopping.ToppingId
+        );
+
+        if (toppingIsAlreadyOnOrder)
+        {
+            return Results.BadRequest("This topping is already on the order");
+        }
+
+        TuberTopping tuberToppingToAdd = new TuberTopping
+        {
+            Id = tuberToppings.Max(tt => tt.Id) + 1,
+            TuberOrderId = newTuberTopping.TuberOrderId,
+            ToppingId = newTuberTopping.ToppingId,
+        };
+
+        tuberToppings.Add(tuberToppingToAdd);
+
+        return Results.Created($"/tubertoppings/{tuberToppingToAdd.Id}", tuberToppingToAdd);
     }
 );
 
